@@ -596,3 +596,23 @@ fn attrs() {
         }
     }
 }
+
+#[test]
+fn pinned_drop() {
+    pin_project! {
+        pub struct Struct<'a> {
+            was_dropped: &'a mut bool,
+            #[pin]
+            field: u8,
+        }
+        impl PinnedDrop for Struct<'_> {
+            fn drop(self: Pin<&mut Self>) {
+                **self.project().was_dropped = true;
+            }
+        }
+    }
+
+    let mut was_dropped = false;
+    drop(Struct { was_dropped: &mut was_dropped, field: 42 });
+    assert!(was_dropped);
+}
